@@ -3,10 +3,14 @@ const bcrypt = require('bcryptjs');
 const User = require('../domain/user.entity');
 const { JWT_SECRET, JWT_EXPIRES_IN } = require('../config/env');
 
-// Usuario por defecto: admin / AdminPass2026!
-const defaultHash = bcrypt.hashSync('AdminPass2026!', 10);
+// Generación de hashes seguros con bcrypt
+const adminHash = bcrypt.hashSync('AdminPass2026!', 10);
+const clienteHash = bcrypt.hashSync('ClientePass2026!', 10);
+
+// Base de datos en memoria con roles de Administrador y Cliente
 const usersStore = [
-  new User(1, 'admin', defaultHash, 'Administrador')
+  new User(1, 'admin', adminHash, 'Administrador'),
+  new User(2, 'cliente', clienteHash, 'Cliente')
 ];
 
 class AuthService {
@@ -34,12 +38,24 @@ class AuthService {
   }
 
   getDashboardData(tokenPayload) {
-    return {
-      mensaje: 'Acceso autorizado al Dashboard Seguro',
+    const baseData = {
       usuario: tokenPayload.username,
       rol: tokenPayload.role,
       arquitectura: 'Aislamiento Zero Trust en VPC Privada',
       timestamp: new Date().toISOString()
+    };
+
+    // Respuesta diferenciada por rol (RBAC)
+    if (tokenPayload.role === 'Administrador') {
+      return {
+        ...baseData,
+        mensaje: 'Acceso total autorizado al Dashboard de Administración'
+      };
+    }
+
+    return {
+      ...baseData,
+      mensaje: 'Acceso autorizado al Portal de Cliente (Solo Consulta)'
     };
   }
 }
